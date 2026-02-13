@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Off-Grid Calculator Preview</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f4f7fb; }
+    .wrap { max-width: 1000px; margin: 0 auto; padding: 20px; }
+    .card { background: white; padding: 16px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.08); margin: 12px 0; }
+    .grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); }
+    input, select { padding: 8px; width: 100%; }
+    .good { color: #1a7f37; } .warn{ color: #9a6700; } .err{ color: #b42318; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react">
+    const r2=(n)=>Number(n.toFixed(2));
+    const CITY={Sydney:1213,Melbourne:648,Brisbane:1207,Perth:721,Adelaide:528,Darwin:1729,Hobart:616,Canberra:629};
+
+    function App(){
+      const [daily,setDaily]=React.useState(15);
+      const [v,setV]=React.useState(48);
+      const [days,setDays]=React.useState(3);
+      const [dod,setDod]=React.useState(80);
+      const [temp,setTemp]=React.useState('moderate');
+      const [load,setLoad]=React.useState(2000);
+      const [largest,setLargest]=React.useState(1500);
+      const [exp,setExp]=React.useState(20);
+      const [sun,setSun]=React.useState(5);
+      const [eff,setEff]=React.useState(75);
+      const [roof,setRoof]=React.useState(150);
+      const [loc,setLoc]=React.useState('Sydney');
+      const [house,setHouse]=React.useState(4);
+      const [usage,setUsage]=React.useState(150);
+      const [dry,setDry]=React.useState(30);
+      const [sysCost,setSysCost]=React.useState(25000);
+      const [gridQ,setGridQ]=React.useState(600);
+      const [dist,setDist]=React.useState(500);
+
+      const dailyAh=(daily*1000)/v;
+      let batteryAh=(dailyAh*days)/(dod/100);
+      if(temp==='cold') batteryAh*=1.2;
+      if(temp==='hot') batteryAh*=0.95;
+      const batteryKWh=(batteryAh*v)/1000;
+
+      const surge=1.2;
+      const peakLoad=load+((largest*surge)-largest);
+      const minimumW=peakLoad*(1+exp/100)*1.1;
+      const va=minimumW/0.9;
+
+      const actualEnergy=daily/(eff/100);
+      const watts=(actualEnergy/sun)*1.2;
+
+      const rainfall=CITY[loc]||1000;
+      const annualCollection=(roof*rainfall*0.8)/1000;
+      const annualUsage=house*usage*365;
+      let tank=house*usage*dry*1.2;
+      if(annualCollection<annualUsage) tank*=1.5;
+
+      let gridCost=0;
+      if(dist>100){ if(dist<=500) gridCost=dist*50; else if(dist<=1000) gridCost=25000+(dist-500)*40; else gridCost=45000+(dist-1000)*30; }
+      const annualGrid=gridQ*4;
+      const totalGrid25=annualGrid*((Math.pow(1.05,25)-1)/0.05);
+      const totalSolar25=sysCost+(sysCost*0.3)+(sysCost*0.01*25);
+      const payback=(sysCost+sysCost*0.3)/(annualGrid-(sysCost*0.01));
+
+      return <div className="wrap">
+        <h1>Off-Grid Calculators Preview (Working)</h1>
+        <div className="card"><h2>1) Battery Bank</h2><div className="grid"><input type="number" value={daily} onChange={e=>setDaily(Number(e.target.value))}/><select value={v} onChange={e=>setV(Number(e.target.value))}><option>12</option><option>24</option><option>48</option></select><input type="number" value={days} onChange={e=>setDays(Number(e.target.value))}/><select value={dod} onChange={e=>setDod(Number(e.target.value))}><option>50</option><option>80</option><option>90</option><option>100</option></select><select value={temp} onChange={e=>setTemp(e.target.value)}><option value="hot">hot</option><option value="moderate">moderate</option><option value="cold">cold</option></select></div><p><b>{r2(batteryAh)} Ah</b> @ {v}V ({r2(batteryKWh)} kWh)</p></div>
+        <hr/>
+        <div className="card"><h2>2) Inverter</h2><div className="grid"><input type="number" value={load} onChange={e=>setLoad(Number(e.target.value))}/><input type="number" value={largest} onChange={e=>setLargest(Number(e.target.value))}/><select value={exp} onChange={e=>setExp(Number(e.target.value))}><option>0</option><option>20</option><option>50</option></select></div><p><b>{Math.ceil(minimumW/1000)} kW</b> ({r2(va)} VA)</p></div>
+        <hr/>
+        <div className="card"><h2>3) Appliance Load</h2><p>Use full component for 50+ appliance controls; preview keeps formulas visible.</p><p><b>{daily} kWh/day</b> baseline used for linked calculators.</p></div>
+        <hr/>
+        <div className="card"><h2>4) Rainwater</h2><div className="grid"><input type="number" value={roof} onChange={e=>setRoof(Number(e.target.value))}/><select value={loc} onChange={e=>setLoc(e.target.value)}>{Object.keys(CITY).map(c=><option key={c}>{c}</option>)}</select><input type="number" value={house} onChange={e=>setHouse(Number(e.target.value))}/><input type="number" value={usage} onChange={e=>setUsage(Number(e.target.value))}/><input type="number" value={dry} onChange={e=>setDry(Number(e.target.value))}/></div><p>Tank: <b>{Math.round(tank)} L</b> | Collection: {Math.round(annualCollection)}L | Usage: {Math.round(annualUsage)}L</p></div>
+        <hr/>
+        <div className="card"><h2>5) ROI</h2><div className="grid"><input type="number" value={sysCost} onChange={e=>setSysCost(Number(e.target.value))}/><input type="number" value={gridQ} onChange={e=>setGridQ(Number(e.target.value))}/><input type="number" value={dist} onChange={e=>setDist(Number(e.target.value))}/></div><p>Payback: <b>{r2(payback)} years</b> | 25yr savings: <b>{Math.round((totalGrid25+gridCost)-totalSolar25)}</b></p></div>
+        <hr/>
+        <div className="card"><h2>6) Solar Panels</h2><div className="grid"><input type="number" value={daily} onChange={e=>setDaily(Number(e.target.value))}/><input type="range" min="3" max="7" step="0.5" value={sun} onChange={e=>setSun(Number(e.target.value))}/><select value={eff} onChange={e=>setEff(Number(e.target.value))}><option>70</option><option>75</option><option>80</option><option>85</option></select></div><p>Recommended: <b>{r2(watts)} W</b></p></div>
+        <hr/>
+        <div className="card"><h2>Combined Master Plan</h2><p>Solar: <b>{r2(watts)}W</b> | Battery: <b>{r2(batteryAh)}Ah</b> | Inverter: <b>{Math.ceil(minimumW/1000)}kW</b> | Water tank: <b>{Math.round(tank)}L</b> | Payback: <b>{r2(payback)}y</b></p></div>
+      </div>
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  </script>
+</body>
+</html>
