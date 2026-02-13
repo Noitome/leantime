@@ -7,87 +7,83 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #f4f7fb; }
-    .wrap { max-width: 1000px; margin: 0 auto; padding: 20px; }
-    .card { background: white; padding: 16px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.08); margin: 12px 0; }
-    .grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); }
-    input, select { padding: 8px; width: 100%; }
-    .good { color: #1a7f37; } .warn{ color: #9a6700; } .err{ color: #b42318; }
-  </style>
+  <style>body{font-family:Arial;margin:0;background:#f4f7fb}.wrap{max-width:1100px;margin:0 auto;padding:20px}.card{background:#fff;border-radius:10px;padding:16px;box-shadow:0 2px 6px rgba(0,0,0,.08);margin:10px 0}.grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}input,select{padding:8px;width:100%}button{cursor:pointer}.tabs button{margin-right:6px;padding:8px 10px;border:none;border-radius:8px;background:#e5e7eb}.tabs button.active{background:#1d4ed8;color:#fff}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:6px;font-size:12px}</style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="text/babel" data-presets="react">
-    const r2=(n)=>Number(n.toFixed(2));
-    const CITY={Sydney:1213,Melbourne:648,Brisbane:1207,Perth:721,Adelaide:528,Darwin:1729,Hobart:616,Canberra:629};
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const spec={"lead-acid":{dod:50,whkg:35,min:6,max:10},agm:{dod:50,whkg:45,min:7,max:11},lifepo4:{dod:90,whkg:110,min:9,max:16},"lithium-ion":{dod:90,whkg:150,min:10,max:18},"sodium-ion":{dod:90,whkg:95,min:8,max:14},"redox-flow":{dod:100,whkg:25,min:12,max:22}};
+const city={Sydney:1213,Melbourne:648,Brisbane:1207,Perth:721,Adelaide:528,Darwin:1729,Hobart:616,Canberra:629};
+const r2=n=>Number(n.toFixed(2)); const aud=n=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',maximumFractionDigits:0}).format(n);
 
-    function App(){
-      const [daily,setDaily]=React.useState(15);
-      const [v,setV]=React.useState(48);
-      const [days,setDays]=React.useState(3);
-      const [dod,setDod]=React.useState(80);
-      const [temp,setTemp]=React.useState('moderate');
-      const [load,setLoad]=React.useState(2000);
-      const [largest,setLargest]=React.useState(1500);
-      const [exp,setExp]=React.useState(20);
-      const [sun,setSun]=React.useState(5);
-      const [eff,setEff]=React.useState(75);
-      const [roof,setRoof]=React.useState(150);
-      const [loc,setLoc]=React.useState('Sydney');
-      const [house,setHouse]=React.useState(4);
-      const [usage,setUsage]=React.useState(150);
-      const [dry,setDry]=React.useState(30);
-      const [sysCost,setSysCost]=React.useState(25000);
-      const [gridQ,setGridQ]=React.useState(600);
-      const [dist,setDist]=React.useState(500);
+function App(){
+ const [tab,setTab]=React.useState('core');
+ const [daily,setDaily]=React.useState(15),[volts,setVolts]=React.useState(48),[days,setDays]=React.useState(3),[temp,setTemp]=React.useState('moderate');
+ const [type,setType]=React.useState('lifepo4'),[autoDod,setAutoDod]=React.useState(true),[dod,setDod]=React.useState(90);
+ const [load,setLoad]=React.useState(2000),[largest,setLargest]=React.useState(1500),[sun,setSun]=React.useState(5),[eff,setEff]=React.useState(75);
+ const [wind,setWind]=React.useState(false),[hydro,setHydro]=React.useState(false),[thermal,setThermal]=React.useState(false);
+ const [wkw,setWkw]=React.useState(2),[hkw,setHkw]=React.useState(3),[tkw,setTkw]=React.useState(1);
+ const [source,setSource]=React.useState('rain'),[storage,setStorage]=React.useState('poly-cubes'),[delivery,setDelivery]=React.useState('pump');
+ const [roof,setRoof]=React.useState(150),[loc,setLoc]=React.useState('Sydney'),[people,setPeople]=React.useState(4),[usage,setUsage]=React.useState(150),[dry,setDry]=React.useState(30);
+ const [septic,setSeptic]=React.useState(true),[worm,setWorm]=React.useState(false),[compost,setCompost]=React.useState(false),[biogas,setBiogas]=React.useState(false);
 
-      const dailyAh=(daily*1000)/v;
-      let batteryAh=(dailyAh*days)/(dod/100);
-      if(temp==='cold') batteryAh*=1.2;
-      if(temp==='hot') batteryAh*=0.95;
-      const batteryKWh=(batteryAh*v)/1000;
+ const useDod=autoDod?spec[type].dod:dod;
+ const dailyAh=(daily*1000)/volts; let ah=(dailyAh*days)/(useDod/100); if(temp==='cold')ah*=1.2; if(temp==='hot')ah*=0.95;
+ const kwh=(ah*volts)/1000; const weight=(kwh*1000)/spec[type].whkg; const cost=[ah*spec[type].min,ah*spec[type].max];
+ const table=Object.keys(spec).map(t=>{let a=(dailyAh*days)/(spec[t].dod/100);if(temp==='cold')a*=1.2;if(temp==='hot')a*=0.95;let k=(a*volts)/1000;return{t,ah:a,w:(k*1000)/spec[t].whkg,min:a*spec[t].min,max:a*spec[t].max,d:spec[t].dod};});
 
-      const surge=1.2;
-      const peakLoad=load+((largest*surge)-largest);
-      const minimumW=peakLoad*(1+exp/100)*1.1;
-      const va=minimumW/0.9;
+ const minInv=(load+((largest*1.2)-largest))*1.2*1.1; const solarW=((daily/(eff/100))/sun)*1000*1.2;
+ const alt=(wind?wkw*24*0.3:0)+(hydro?hkw*24*0.6:0)+(thermal?tkw*24*0.4:0);
+ let annual=(roof*(city[loc]||1000)*0.8)/1000; if(source==='bore')annual+=180000; if(source==='dam')annual+=240000; if(source==='atmospheric')annual+=55000;
+ let tank=people*usage*dry*1.2; if(annual<people*usage*365) tank*=1.5;
+ const wasteCost=(septic?450:0)+(worm?220:0)+(compost?220:0)+(biogas?700:0);
 
-      const actualEnergy=daily/(eff/100);
-      const watts=(actualEnergy/sun)*1.2;
+ return <div className='wrap'>
+  <h1>⚡ Off-Grid Calculators Preview</h1>
+  <div className='tabs'>{['core','alt','water','waste','combined'].map(t=><button key={t} className={tab===t?'active':''} onClick={()=>setTab(t)}>{t.toUpperCase()}</button>)}</div>
 
-      const rainfall=CITY[loc]||1000;
-      const annualCollection=(roof*rainfall*0.8)/1000;
-      const annualUsage=house*usage*365;
-      let tank=house*usage*dry*1.2;
-      if(annualCollection<annualUsage) tank*=1.5;
+  {tab==='core'&&<div className='card'>
+   <h2>🔋 Battery + ☀️ Solar + 🔌 Inverter</h2>
+   <div className='grid'>
+    <input type='number' value={daily} onChange={e=>setDaily(Number(e.target.value))}/><select value={volts} onChange={e=>setVolts(Number(e.target.value))}><option>12</option><option>24</option><option>48</option></select>
+    <input type='number' value={days} onChange={e=>setDays(Number(e.target.value))}/><select value={temp} onChange={e=>setTemp(e.target.value)}><option value='hot'>hot</option><option value='moderate'>moderate</option><option value='cold'>cold</option></select>
+    <select value={type} onChange={e=>setType(e.target.value)}>{Object.keys(spec).map(t=><option key={t} value={t}>{t}</option>)}</select><label><input type='checkbox' checked={autoDod} onChange={e=>setAutoDod(e.target.checked)}/> chemistry DOD</label>
+    <select disabled={autoDod} value={dod} onChange={e=>setDod(Number(e.target.value))}><option>50</option><option>80</option><option>90</option><option>100</option></select>
+   </div>
+   <p>Capacity <b>{r2(ah)} Ah</b> | Energy {r2(kwh)}kWh | Weight {Math.round(weight)}kg | Cost {aud(cost[0])}-{aud(cost[1])}</p>
+   <div style={{overflow:'auto'}}><table><thead><tr><th>Type</th><th>DOD</th><th>Ah</th><th>Weight</th><th>Cost</th></tr></thead><tbody>{table.map(r=><tr key={r.t}><td>{r.t}</td><td>{r.d}%</td><td>{r2(r.ah)}</td><td>{Math.round(r.w)}kg</td><td>{aud(r.min)}-{aud(r.max)}</td></tr>)}</tbody></table></div>
+   <hr/><div className='grid'><input type='number' value={load} onChange={e=>setLoad(Number(e.target.value))}/><input type='number' value={largest} onChange={e=>setLargest(Number(e.target.value))}/><input type='range' min='3' max='7' step='0.5' value={sun} onChange={e=>setSun(Number(e.target.value))}/><select value={eff} onChange={e=>setEff(Number(e.target.value))}><option>70</option><option>75</option><option>80</option><option>85</option></select></div>
+   <p>Inverter: <b>{Math.ceil(minInv/1000)}kW</b> | Solar array: <b>{Math.round(solarW)}W</b></p>
+  </div>}
 
-      let gridCost=0;
-      if(dist>100){ if(dist<=500) gridCost=dist*50; else if(dist<=1000) gridCost=25000+(dist-500)*40; else gridCost=45000+(dist-1000)*30; }
-      const annualGrid=gridQ*4;
-      const totalGrid25=annualGrid*((Math.pow(1.05,25)-1)/0.05);
-      const totalSolar25=sysCost+(sysCost*0.3)+(sysCost*0.01*25);
-      const payback=(sysCost+sysCost*0.3)/(annualGrid-(sysCost*0.01));
+  {tab==='alt'&&<div className='card'><h2>🌬️ Alt Energy</h2><div className='grid'>
+   <label><input type='checkbox' checked={wind} onChange={e=>setWind(e.target.checked)}/>Wind <input type='number' value={wkw} onChange={e=>setWkw(Number(e.target.value))}/></label>
+   <label><input type='checkbox' checked={hydro} onChange={e=>setHydro(e.target.checked)}/>Hydro <input type='number' value={hkw} onChange={e=>setHkw(Number(e.target.value))}/></label>
+   <label><input type='checkbox' checked={thermal} onChange={e=>setThermal(e.target.checked)}/>Thermal <input type='number' value={tkw} onChange={e=>setTkw(Number(e.target.value))}/></label>
+  </div><p>Alt feed = <b>{r2(alt)} kWh/day</b> (feeds combined summary)</p></div>}
 
-      return <div className="wrap">
-        <h1>Off-Grid Calculators Preview (Working)</h1>
-        <div className="card"><h2>1) Battery Bank</h2><div className="grid"><input type="number" value={daily} onChange={e=>setDaily(Number(e.target.value))}/><select value={v} onChange={e=>setV(Number(e.target.value))}><option>12</option><option>24</option><option>48</option></select><input type="number" value={days} onChange={e=>setDays(Number(e.target.value))}/><select value={dod} onChange={e=>setDod(Number(e.target.value))}><option>50</option><option>80</option><option>90</option><option>100</option></select><select value={temp} onChange={e=>setTemp(e.target.value)}><option value="hot">hot</option><option value="moderate">moderate</option><option value="cold">cold</option></select></div><p><b>{r2(batteryAh)} Ah</b> @ {v}V ({r2(batteryKWh)} kWh)</p></div>
-        <hr/>
-        <div className="card"><h2>2) Inverter</h2><div className="grid"><input type="number" value={load} onChange={e=>setLoad(Number(e.target.value))}/><input type="number" value={largest} onChange={e=>setLargest(Number(e.target.value))}/><select value={exp} onChange={e=>setExp(Number(e.target.value))}><option>0</option><option>20</option><option>50</option></select></div><p><b>{Math.ceil(minimumW/1000)} kW</b> ({r2(va)} VA)</p></div>
-        <hr/>
-        <div className="card"><h2>3) Appliance Load</h2><p>Use full component for 50+ appliance controls; preview keeps formulas visible.</p><p><b>{daily} kWh/day</b> baseline used for linked calculators.</p></div>
-        <hr/>
-        <div className="card"><h2>4) Rainwater</h2><div className="grid"><input type="number" value={roof} onChange={e=>setRoof(Number(e.target.value))}/><select value={loc} onChange={e=>setLoc(e.target.value)}>{Object.keys(CITY).map(c=><option key={c}>{c}</option>)}</select><input type="number" value={house} onChange={e=>setHouse(Number(e.target.value))}/><input type="number" value={usage} onChange={e=>setUsage(Number(e.target.value))}/><input type="number" value={dry} onChange={e=>setDry(Number(e.target.value))}/></div><p>Tank: <b>{Math.round(tank)} L</b> | Collection: {Math.round(annualCollection)}L | Usage: {Math.round(annualUsage)}L</p></div>
-        <hr/>
-        <div className="card"><h2>5) ROI</h2><div className="grid"><input type="number" value={sysCost} onChange={e=>setSysCost(Number(e.target.value))}/><input type="number" value={gridQ} onChange={e=>setGridQ(Number(e.target.value))}/><input type="number" value={dist} onChange={e=>setDist(Number(e.target.value))}/></div><p>Payback: <b>{r2(payback)} years</b> | 25yr savings: <b>{Math.round((totalGrid25+gridCost)-totalSolar25)}</b></p></div>
-        <hr/>
-        <div className="card"><h2>6) Solar Panels</h2><div className="grid"><input type="number" value={daily} onChange={e=>setDaily(Number(e.target.value))}/><input type="range" min="3" max="7" step="0.5" value={sun} onChange={e=>setSun(Number(e.target.value))}/><select value={eff} onChange={e=>setEff(Number(e.target.value))}><option>70</option><option>75</option><option>80</option><option>85</option></select></div><p>Recommended: <b>{r2(watts)} W</b></p></div>
-        <hr/>
-        <div className="card"><h2>Combined Master Plan</h2><p>Solar: <b>{r2(watts)}W</b> | Battery: <b>{r2(batteryAh)}Ah</b> | Inverter: <b>{Math.ceil(minimumW/1000)}kW</b> | Water tank: <b>{Math.round(tank)}L</b> | Payback: <b>{r2(payback)}y</b></p></div>
-      </div>
-    }
+  {tab==='water'&&<div className='card'><h2>💧 Water Phase 5</h2><div className='grid'>
+    <select value={source} onChange={e=>setSource(e.target.value)}><option value='rain'>rain</option><option value='bore'>bore</option><option value='dam'>dam</option><option value='atmospheric'>atmospheric</option></select>
+    <select value={delivery} onChange={e=>setDelivery(e.target.value)}><option value='gravity'>gravity</option><option value='pump'>pump</option></select>
+    <select value={storage} onChange={e=>setStorage(e.target.value)}><option value='poly-cubes'>poly cubes</option><option value='bladder'>bladder</option><option value='hillside-dam'>hillside dam</option><option value='concrete'>concrete</option></select>
+    <input type='number' value={roof} onChange={e=>setRoof(Number(e.target.value))}/><select value={loc} onChange={e=>setLoc(e.target.value)}>{Object.keys(city).map(c=><option key={c}>{c}</option>)}</select>
+    <input type='number' value={people} onChange={e=>setPeople(Number(e.target.value))}/><input type='number' value={usage} onChange={e=>setUsage(Number(e.target.value))}/><input type='number' value={dry} onChange={e=>setDry(Number(e.target.value))}/>
+  </div><p>Recommended storage: <b>{Math.round(tank)}L</b> | Source: {source} | Delivery: {delivery} | Storage type: {storage}</p></div>}
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
-  </script>
+  {tab==='waste'&&<div className='card'><h2>♻️ Waste</h2><div className='grid'>
+   <label><input type='checkbox' checked={septic} onChange={e=>setSeptic(e.target.checked)}/>septic</label>
+   <label><input type='checkbox' checked={worm} onChange={e=>setWorm(e.target.checked)}/>worm farm</label>
+   <label><input type='checkbox' checked={compost} onChange={e=>setCompost(e.target.checked)}/>composting toilet</label>
+   <label><input type='checkbox' checked={biogas} onChange={e=>setBiogas(e.target.checked)}/>biogas</label>
+  </div><p>Annual maintenance estimate: <b>{aud(wasteCost)}</b></p></div>}
+
+  {tab==='combined'&&<div className='card'><h2>🧠 Combined Summary</h2>
+    <p>Net daily load after Alt Energy: <b>{r2(Math.max(0,daily-alt))} kWh/day</b> (alt {r2(alt)} kWh/day)</p>
+    <p>Solar {Math.round(solarW)}W | Battery {r2(ah)}Ah | Water storage {Math.round(tank)}L | Waste maintenance {aud(wasteCost)}</p>
+  </div>}
+ </div>
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
 </body>
 </html>
