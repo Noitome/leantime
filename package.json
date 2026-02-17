@@ -66,7 +66,11 @@
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4"
   },
-  "scripts": {},
+  "scripts": {
+    "offgrid:preview": "node bin/offgrid-preview-server.mjs",
+    "types:react:shim": "bash bin/setup-react-types.sh",
+    "offgrid:preview:all": "node bin/offgrid-preview-server.mjs --host 0.0.0.0 --port 8000"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/Leantime/leantime"
